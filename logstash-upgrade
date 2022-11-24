@@ -1,0 +1,83 @@
+- name: Logstash upgradation(7.x)
+  hosts: logstash
+  become: true
+  gather_facts: true
+  #environment:
+    #http_proxy: http://cloudproxy-t.nat.bt.com:8080
+    #https_proxy: http://cloudproxy-t.nat.bt.com:8080
+  
+  vars_files:
+    - /etc/ansible/vault-pass.yml
+  vars:
+    logstash_http_port: 9600
+    new_logstash_version: 7.17.5
+    logstash_destination: /opt/logstash
+    application: logstash
+    logstash_home: /usr/share/logstash
+    logstash_config: /etc/logstash
+    logstash_home_backup: /opt/logstash_home_backup_7.16.2
+    logstash_config_backup: /opt/logstash_config_backup_7.16.2
+    
+
+
+  tasks:
+  
+     #Add task to check current version
+    
+    - name: Take backup of logstash home directory
+      ansible.builtin.command: cp -rp "{{logstash_home}}" "{{logstash_home_backup}}"
+        
+    - name: Take backup of logstash config directory
+      ansible.builtin.command: cp -rp "{{logstash_config}}" "{{logstash_config_backup}}" 
+
+    - name: Download Logstash RPM package {{ new_logstash_version }}
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/downloads/logstash/logstash-{{ new_logstash_version }}-x86_64.rpm
+        dest: {{ logstash_destination }}
+        #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ new_logstash_version }}-x86_64.rpm.sha512"
+    
+    - name: Stop service {{ application}}
+      ansible.builtin.service:
+        name: {{ application }}
+        state: stopped
+
+    - name: Install Logstash
+      ansible.builtin.yum:
+        name: /{{ logstash_destination }}/logstash-{{ es_version }}-x86_64.rpm
+        state: present
+        
+    - name: Just force systemd to reload
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        
+    - name: Enable service logstash and ensure it is not masked
+      ansible.builtin.systemd:
+        name: {{ application }}
+        enabled: yes
+        masked: no
+
+    - name: Start service {{ application}}, if not started
+      ansible.builtin.service:
+        name: {{ application }}
+        state: started
+
+    - name: Wait for cluster health to return to green
+      command: sudo curl -XGET -u elastic:{{ password }}   "http://{{ ansible_facts['nodename'] }}:61002"
+      no_log: True
+      retries: 10
+      delay: 15
+      
+   - name: checking logstash service status
+      ansible.builtin.command: systemctl status logstash
+      register: result
+      until: "'active (running)' in result.stdout"
+      retries: 10
+      delay: 15
+
+    - name: showing logstash status report
+      ansible.builtin.debug:
+        var: result 
+        
+    - name: Pause for 1 minute
+      ansible.builtin.pause:
+        minutes: 1
