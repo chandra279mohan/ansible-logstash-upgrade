@@ -42,9 +42,7 @@
         state: stopped
 
     - name: Install Logstash
-      ansible.builtin.yum:
-        name: /opt/logstash-{{ es_version }}-x86_64.rpm
-        state: present
+      ansible.builtin.command: rpm -Uvh /opt/logstash-{{ es_version }}-x86_64.rpm
         
     - name: Just force systemd to reload
       ansible.builtin.systemd:
