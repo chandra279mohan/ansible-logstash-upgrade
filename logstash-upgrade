@@ -33,7 +33,7 @@
     - name: Download Logstash RPM package {{ new_logstash_version }}
       ansible.builtin.get_url:
         url: https://artifacts.elastic.co/downloads/logstash/logstash-{{ new_logstash_version }}-x86_64.rpm
-        dest: {{ logstash_destination }}
+        dest: "{{ logstash_destination }}"
         #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ new_logstash_version }}-x86_64.rpm.sha512"
     
     - name: Stop service {{ application}}
@@ -68,10 +68,7 @@
       delay: 15
       register: nodes
       
-    - name: Logstash nodes
-      debug:
-        var: nodes.stdout_lines
-      
+         
     - name: checking logstash service status
       ansible.builtin.command: systemctl status logstash
       register: result
