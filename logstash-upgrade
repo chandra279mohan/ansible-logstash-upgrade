@@ -72,7 +72,7 @@
       debug:
         var: nodes.stdout_lines
       
-   - name: checking logstash service status
+    - name: checking logstash service status
       ansible.builtin.command: systemctl status logstash
       register: result
       until: "'active (running)' in result.stdout"
