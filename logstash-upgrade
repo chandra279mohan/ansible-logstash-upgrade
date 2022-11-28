@@ -38,7 +38,7 @@
     
     - name: Stop service {{ application}}
       ansible.builtin.service:
-        name: {{ application }}
+        name: "{{ application }}"
         state: stopped
 
     - name: Install Logstash
@@ -52,13 +52,13 @@
         
     - name: Enable service logstash and ensure it is not masked
       ansible.builtin.systemd:
-        name: {{ application }}
+        name: "{{ application }}"
         enabled: yes
         masked: no
 
     - name: Start service {{ application}}, if not started
       ansible.builtin.service:
-        name: {{ application }}
+        name: "{{ application }}"
         state: started
 
     - name: Wait for cluster health to return to green
@@ -81,7 +81,7 @@
 
     - name: showing logstash status report
       ansible.builtin.debug:
-        var: result 
+        var: result.stdout
         
     - name: Pause for 1 minute
       ansible.builtin.pause:
